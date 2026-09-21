@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nos bons moments en classe - Edu-Centre De La Salle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+<a href="index.html" class="ecole"><div class="logo">Edu-Centre</div><div><strong>DE LA SALLE</strong><small>OTTAWA</small></div></a>
+<div class="menu">
+<a href="index.html">Accueil</a>
+<a href="sports.html">Sports</a>
+<a href="informatique.html">Informatique</a>
+<a href="mathematiques.html">Mathématiques</a>
+<a href="sciences.html">Sciences & découvertes</a>
+<a href="defis.html">Défis</a>
+<a class="actif" href="galerie.html">Galerie</a>
+</div>
+</nav>
+<main class="conteneur">
+<section class="galerie galerie-bons-moments">
+<div class="image-galerie">
+<img src="images/bons-moments-1.jpg" onclick="agrandir(this)" alt="Un bon moment partagé en classe">
+</div>
+<div class="image-galerie">
+<img src="images/bons-moments-2.jpg" onclick="agrandir(this)" alt="Un bon moment partagé en classe">
+</div>
+</section>
+</main>
+
+<div class="retour"><a href="galerie.html">← Retour à Nos beaux moments</a></div>
+
+<div id="modal" class="modal" onclick="fermerModal(event)">
+<button onclick="fermer()">×</button>
+<img id="grandeImage" alt="Photo agrandie">
+</div>
+
+<footer><strong>Edu-Centre • De La Salle</strong><span>Apprendre • Bouger • Créer • Réussir</span></footer>
+<script src="script.js"></script>
+</body>
+</html>
