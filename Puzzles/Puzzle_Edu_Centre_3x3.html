@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle Edu-Centre 3×3</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:#6b1735;color:#222;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:min(920px,96vw);background:#fff;border-radius:24px;padding:24px;box-shadow:0 18px 50px #0005;text-align:center}
+h1{margin:0;color:#6b1735;font-size:clamp(28px,5vw,46px)}
+.sub{margin:8px 0 20px;color:#555;font-size:18px}.wrap{display:grid;grid-template-columns:1fr 260px;gap:24px;align-items:start}.board{width:min(570px,90vw);aspect-ratio:1;margin:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#6b1735;padding:6px;border-radius:16px;box-shadow:inset 0 0 0 2px #6b1735}.piece{border:0;border-radius:9px;cursor:grab;position:relative;overflow:hidden;padding:0;background:#ddd;min-width:0}.piece:active{cursor:grabbing}.piece.selected{outline:6px solid #f0bd48;z-index:3}.piece.dragging{opacity:.45}.piece canvas{width:100%;height:100%;display:block}.side{background:#f5f0f2;border-radius:16px;padding:18px}.side h2{color:#6b1735;margin-top:0}.preview{width:100%;aspect-ratio:1;border-radius:12px;overflow:hidden;margin-bottom:14px}.preview canvas{width:100%;height:100%;display:block}.btn{width:100%;border:0;border-radius:12px;padding:13px 16px;margin:6px 0;font-size:17px;font-weight:bold;cursor:pointer}.shuffle{background:#6b1735;color:#fff}.reset{background:#e8d9df;color:#6b1735}.stats{display:flex;justify-content:space-around;margin:14px 0;font-weight:bold;color:#6b1735}.hint{font-size:14px;color:#555;line-height:1.4}.win{display:none;margin-top:18px;padding:15px;border-radius:14px;background:#e9f7ec;color:#236233;font-size:21px;font-weight:bold}.win.show{display:block}@media(max-width:760px){.wrap{grid-template-columns:1fr}.side{max-width:570px;margin:auto;width:100%}}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>🧩 Puzzle Edu-Centre</h1>
+<p class="sub">Reconstitue l’image en déplaçant les 9 morceaux.</p>
+<div class="wrap">
+  <div><div id="board" class="board"></div><div id="win" class="win">🎉 Bravo ! Puzzle réussi !</div></div>
+  <aside class="side">
+    <h2>Image modèle</h2><div class="preview"><canvas id="preview" width="600" height="600"></canvas></div>
+    <div class="stats"><span>⏱ <span id="time">00:00</span></span><span>👆 <span id="moves">0</span></span></div>
+    <button class="btn shuffle" id="shuffle">🔀 Mélanger</button>
+    <button class="btn reset" id="reset">↺ Recommencer</button>
+    <p class="hint">Glisse un morceau sur un autre pour les échanger. Tu peux aussi cliquer sur deux morceaux successivement.</p>
+  </aside>
+</div>
+</main>
+<script>
+const N=3, board=document.getElementById('board'), movesEl=document.getElementById('moves'), timeEl=document.getElementById('time'), win=document.getElementById('win');
+let order=[...Array(9).keys()], moves=0, start=null, timer=null, selected=null;
+function drawScene(ctx,w,h){
+ const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#9ed9f5');g.addColorStop(1,'#eaf7ff');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#69ad62';ctx.beginPath();ctx.moveTo(0,h*.62);ctx.quadraticCurveTo(w*.22,h*.48,w*.43,h*.63);ctx.quadraticCurveTo(w*.67,h*.45,w,h*.61);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(w*.82,h*.15,w*.07,0,Math.PI*2);ctx.fill();
+ // building
+ ctx.fillStyle='#f4e4cf';ctx.fillRect(w*.20,h*.34,w*.60,h*.43);ctx.fillStyle='#6b1735';ctx.beginPath();ctx.moveTo(w*.16,h*.35);ctx.lineTo(w*.5,h*.13);ctx.lineTo(w*.84,h*.35);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#fff';ctx.fillRect(w*.41,h*.52,w*.18,h*.25);ctx.fillStyle='#87b7cf';ctx.fillRect(w*.27,h*.47,w*.10,h*.12);ctx.fillRect(w*.63,h*.47,w*.10,h*.12);
+ // path
+ ctx.fillStyle='#d7c3aa';ctx.beginPath();ctx.moveTo(w*.42,h);ctx.lineTo(w*.47,h*.77);ctx.lineTo(w*.59,h*.77);ctx.lineTo(w*.72,h);ctx.fill();
+ // trees
+ for(const x of [.1,.88]){ctx.fillStyle='#755038';ctx.fillRect(w*x-w*.015,h*.50,w*.03,h*.25);ctx.fillStyle='#3f884b';ctx.beginPath();ctx.arc(w*x,h*.47,w*.09,0,Math.PI*2);ctx.fill();}
+ // title banner
+ ctx.fillStyle='rgba(107,23,53,.94)';ctx.fillRect(w*.12,h*.79,w*.76,h*.13);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`bold ${w*.057}px Arial`;ctx.fillText('EDU-CENTRE',w*.5,h*.845);ctx.font=`${w*.025}px Arial`;ctx.fillText('Apprendre • Créer • Grandir',w*.5,h*.89);
+}
+function sourceCanvas(){let c=document.createElement('canvas');c.width=c.height=600;drawScene(c.getContext('2d'),600,600);return c} const source=sourceCanvas();document.getElementById('preview').getContext('2d').drawImage(source,0,0);
+function pieceCanvas(id){let c=document.createElement('canvas');c.width=c.height=200;let ctx=c.getContext('2d'), sx=(id%N)*200, sy=Math.floor(id/N)*200;ctx.drawImage(source,sx,sy,200,200,0,0,200,200);return c}
+function render(){board.innerHTML='';order.forEach((id,pos)=>{let b=document.createElement('button');b.className='piece';b.draggable=true;b.dataset.pos=pos;b.appendChild(pieceCanvas(id));b.addEventListener('dragstart',e=>{b.classList.add('dragging');e.dataTransfer.setData('text/plain',pos)});b.addEventListener('dragend',()=>b.classList.remove('dragging'));b.addEventListener('dragover',e=>e.preventDefault());b.addEventListener('drop',e=>{e.preventDefault();swap(+e.dataTransfer.getData('text/plain'),pos)});b.addEventListener('click',()=>selectPiece(pos,b));board.appendChild(b)})}
+function selectPiece(pos,b){if(selected===null){selected=pos;b.classList.add('selected')}else{let a=selected;selected=null;swap(a,pos)}}
+function swap(a,b){if(a===b){render();return} [order[a],order[b]]=[order[b],order[a]];moves++;movesEl.textContent=moves;if(!start)startClock();render();check()}
+function shuffle(){do{order.sort(()=>Math.random()-.5)}while(order.every((v,i)=>v===i));moves=0;movesEl.textContent=0;win.classList.remove('show');selected=null;start=Date.now();clearInterval(timer);timer=setInterval(updateTime,500);render();updateTime()}
+function reset(){order=[...Array(9).keys()];moves=0;movesEl.textContent=0;win.classList.remove('show');selected=null;start=null;clearInterval(timer);timer=null;timeEl.textContent='00:00';render()}
+function startClock(){start=Date.now();timer=setInterval(updateTime,500)} function updateTime(){if(!start)return;let s=Math.floor((Date.now()-start)/1000);timeEl.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function check(){if(order.every((v,i)=>v===i)){clearInterval(timer);timer=null;win.classList.add('show')}}
+document.getElementById('shuffle').onclick=shuffle;document.getElementById('reset').onclick=reset;shuffle();
+</script>
+</body>
+</html>
